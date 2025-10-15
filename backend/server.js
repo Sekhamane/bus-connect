@@ -9,12 +9,19 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
-
 
 // Middleware - SIMPLE CORS
 app.use(cors());
 app.use(express.json());
+
+// Root endpoint for basic testing
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'BusConnect Backend Server is running!',
+    timestamp: new Date().toISOString(),
+    endpoints: ['/api/health', '/api/test', '/api/users', '/api/products']
+  });
+});
 
 // Test endpoint
 app.get('/api/health', (req, res) => {
@@ -144,7 +151,7 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../build', 'index.html'));
 });
 
-// Start server
+// Start server - ONLY ONCE AT THE BOTTOM
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);

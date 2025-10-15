@@ -3,7 +3,7 @@ const API_BASE_URL = 'https://busconnect-back-end.onrender.com';
 
 // Enhanced fetch function with better error handling
 const apiRequest = async (endpoint, options = {}) => {
-  const url = `${API_BASE_URL}${endpoint}`;
+  const url = `https://busconnect-back-end.onrender.com${endpoint}`;
   console.log(`🔄 API Call: ${url}`);
   
   try {
@@ -44,7 +44,7 @@ const apiRequest = async (endpoint, options = {}) => {
 export const testBackendConnection = async () => {
   try {
     console.log('🧪 Testing backend connection...');
-    const response = await fetch(API_BASE_URL);
+    const response = await fetch('https://busconnect-back-end.onrender.com');
     console.log('Backend response status:', response.status);
     
     const text = await response.text();
