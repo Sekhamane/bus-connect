@@ -1,9 +1,9 @@
-// src/api.js - COMPLETE VERSION
+// src/api.js - CORRECTED VERSION
 const API_BASE_URL = 'https://busconnect-back-end.onrender.com';
 
 // Enhanced fetch function with better error handling
 const apiRequest = async (endpoint, options = {}) => {
-  const url = `https://busconnect-back-end.onrender.com${endpoint}`;
+  const url = `${API_BASE_URL}${endpoint}`;
   console.log(`🔄 API Call: ${url}`);
   
   try {
@@ -44,7 +44,7 @@ const apiRequest = async (endpoint, options = {}) => {
 export const testBackendConnection = async () => {
   try {
     console.log('🧪 Testing backend connection...');
-    const response = await fetch('https://busconnect-back-end.onrender.com');
+    const response = await fetch(API_BASE_URL);
     console.log('Backend response status:', response.status);
     
     const text = await response.text();
@@ -59,223 +59,118 @@ export const testBackendConnection = async () => {
 
 // Health check endpoints
 export const testConnection = async () => {
-  try {
-    return await apiRequest('/health');
-  } catch (error) {
-    return await apiRequest('/api/health');
-  }
+  return apiRequest('/api/health');
 };
 
 export const healthCheck = async () => {
   return apiRequest('/');
 };
 
-// User management
+// User management - ALL ENDPOINTS NOW USE /api/ PREFIX
 export const getUsers = async () => {
-  try {
-    return await apiRequest('/api/users');
-  } catch (error) {
-    return await apiRequest('/users');
-  }
+  return apiRequest('/api/users');
 };
 
 export const createUser = async (userData) => {
-  try {
-    return await apiRequest('/api/users', {
-      method: 'POST',
-      body: JSON.stringify(userData),
-    });
-  } catch (error) {
-    return await apiRequest('/users', {
-      method: 'POST',
-      body: JSON.stringify(userData),
-    });
-  }
+  return apiRequest('/api/users', {
+    method: 'POST',
+    body: JSON.stringify(userData),
+  });
 };
 
 export const loginUser = async (email, password) => {
-  try {
-    return await apiRequest('/api/users/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
-  } catch (error) {
-    return await apiRequest('/users/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
-  }
+  return apiRequest('/api/users/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  });
 };
 
 export const getUserById = async (userId) => {
-  try {
-    return await apiRequest(`/api/users/${userId}`);
-  } catch (error) {
-    return await apiRequest(`/users/${userId}`);
-  }
+  return apiRequest(`/api/users/${userId}`);
 };
 
 export const updateUser = async (userId, userData) => {
-  try {
-    return await apiRequest(`/api/users/${userId}`, {
-      method: 'PUT',
-      body: JSON.stringify(userData),
-    });
-  } catch (error) {
-    return await apiRequest(`/users/${userId}`, {
-      method: 'PUT',
-      body: JSON.stringify(userData),
-    });
-  }
+  return apiRequest(`/api/users/${userId}`, {
+    method: 'PUT',
+    body: JSON.stringify(userData),
+  });
 };
 
 // Product management
 export const getProducts = async () => {
-  try {
-    return await apiRequest('/api/products');
-  } catch (error) {
-    return await apiRequest('/products');
-  }
+  return apiRequest('/api/products');
 };
 
 export const getProductById = async (productId) => {
-  try {
-    return await apiRequest(`/api/products/${productId}`);
-  } catch (error) {
-    return await apiRequest(`/products/${productId}`);
-  }
+  return apiRequest(`/api/products/${productId}`);
 };
 
 export const createProduct = async (productData) => {
-  try {
-    return await apiRequest('/api/products', {
-      method: 'POST',
-      body: JSON.stringify(productData),
-    });
-  } catch (error) {
-    return await apiRequest('/products', {
-      method: 'POST',
-      body: JSON.stringify(productData),
-    });
-  }
+  return apiRequest('/api/products', {
+    method: 'POST',
+    body: JSON.stringify(productData),
+  });
 };
 
 export const updateProduct = async (productId, productData) => {
-  try {
-    return await apiRequest(`/api/products/${productId}`, {
-      method: 'PUT',
-      body: JSON.stringify(productData),
-    });
-  } catch (error) {
-    return await apiRequest(`/products/${productId}`, {
-      method: 'PUT',
-      body: JSON.stringify(productData),
-    });
-  }
+  return apiRequest(`/api/products/${productId}`, {
+    method: 'PUT',
+    body: JSON.stringify(productData),
+  });
 };
 
 export const deleteProduct = async (productId) => {
-  try {
-    return await apiRequest(`/api/products/${productId}`, {
-      method: 'DELETE',
-    });
-  } catch (error) {
-    return await apiRequest(`/products/${productId}`, {
-      method: 'DELETE',
-    });
-  }
+  return apiRequest(`/api/products/${productId}`, {
+    method: 'DELETE',
+  });
 };
 
 // Checkin management
 export const getCheckins = async () => {
-  try {
-    return await apiRequest('/api/checkins');
-  } catch (error) {
-    return await apiRequest('/checkins');
-  }
+  return apiRequest('/api/checkins');
 };
 
 export const getCheckinById = async (checkinId) => {
-  try {
-    return await apiRequest(`/api/checkins/${checkinId}`);
-  } catch (error) {
-    return await apiRequest(`/checkins/${checkinId}`);
-  }
+  return apiRequest(`/api/checkins/${checkinId}`);
 };
 
 export const createCheckin = async (checkinData) => {
-  try {
-    return await apiRequest('/api/checkins', {
-      method: 'POST',
-      body: JSON.stringify(checkinData),
-    });
-  } catch (error) {
-    return await apiRequest('/checkins', {
-      method: 'POST',
-      body: JSON.stringify(checkinData),
-    });
-  }
+  return apiRequest('/api/checkins', {
+    method: 'POST',
+    body: JSON.stringify(checkinData),
+  });
 };
 
 // Message management
 export const getMessages = async (chatKey) => {
-  try {
-    return await apiRequest(`/api/messages/${chatKey}`);
-  } catch (error) {
-    return await apiRequest(`/messages/${chatKey}`);
-  }
+  return apiRequest(`/api/messages/${chatKey}`);
 };
 
 export const createMessage = async (messageData) => {
-  try {
-    return await apiRequest('/api/messages', {
-      method: 'POST',
-      body: JSON.stringify(messageData),
-    });
-  } catch (error) {
-    return await apiRequest('/messages', {
-      method: 'POST',
-      body: JSON.stringify(messageData),
-    });
-  }
+  return apiRequest('/api/messages', {
+    method: 'POST',
+    body: JSON.stringify(messageData),
+  });
 };
 
 export const getChats = async (userId) => {
-  try {
-    return await apiRequest(`/api/chats/${userId}`);
-  } catch (error) {
-    return await apiRequest(`/chats/${userId}`);
-  }
+  return apiRequest(`/api/chats/${userId}`);
 };
 
 // Database initialization
 export const initDatabase = async () => {
-  try {
-    return await apiRequest('/api/init', {
-      method: 'POST',
-    });
-  } catch (error) {
-    return await apiRequest('/init', {
-      method: 'POST',
-    });
-  }
+  return apiRequest('/api/init', {
+    method: 'POST',
+  });
 };
 
 // Search functionality
 export const searchProducts = async (query) => {
-  try {
-    return await apiRequest(`/api/products/search?q=${encodeURIComponent(query)}`);
-  } catch (error) {
-    return await apiRequest(`/products/search?q=${encodeURIComponent(query)}`);
-  }
+  return apiRequest(`/api/products/search?q=${encodeURIComponent(query)}`);
 };
 
 export const searchUsers = async (query) => {
-  try {
-    return await apiRequest(`/api/users/search?q=${encodeURIComponent(query)}`);
-  } catch (error) {
-    return await apiRequest(`/users/search?q=${encodeURIComponent(query)}`);
-  }
+  return apiRequest(`/api/users/search?q=${encodeURIComponent(query)}`);
 };
 
 // Export the base URL for use in other components
