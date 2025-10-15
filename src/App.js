@@ -5,6 +5,7 @@ import {
   initDatabase, 
   getUsers, 
   createUser, 
+  loginUser,
   getProducts, 
   createProduct, 
   getCheckins, 
@@ -14,7 +15,7 @@ import {
 } from './api';
 
 function App() {
-  const [currentView, setCurrentView] = useState('auth');
+  const [currentView, setCurrentView] = useState('welcome');
   const [user, setUser] = useState(null);
   const [allUsers, setAllUsers] = useState([]);
   const [products, setProducts] = useState([]);
@@ -31,19 +32,23 @@ function App() {
   // Initialize database and test connection
   useEffect(() => {
     const initializeApp = async () => {
-      // Test database connection
-      const testResult = await testConnection();
-      if (!testResult.error) {
-        setDbConnected(true);
-        console.log('Database connected:', testResult);
+      try {
+        // Test database connection
+        const testResult = await testConnection();
+        console.log('Backend connection:', testResult);
         
-        // Initialize tables
-        await initDatabase();
-        
-        // Load initial data
-        await loadInitialData();
-      } else {
-        console.error('Database connection failed:', testResult.error);
+        if (testResult.status === 'OK') {
+          setDbConnected(true);
+          console.log('✅ Backend connected successfully');
+          
+          // Load initial data
+          await loadInitialData();
+        } else {
+          throw new Error('Backend connection failed');
+        }
+      } catch (error) {
+        console.error('Backend connection failed, using fallback:', error);
+        setDbConnected(false);
         // Fallback to localStorage if database is not available
         loadFromLocalStorage();
       }
@@ -119,42 +124,34 @@ function App() {
     localStorage.setItem('busconnect_all_users', JSON.stringify(updatedUsers));
     
     setUser(null);
-    setCurrentView('auth');
+    setCurrentView('welcome');
     localStorage.removeItem('busconnect_user');
   };
 
-  const handleLogin = async (userData) => {
-    if (dbConnected) {
-      // Save user to database
-      const dbUser = await createUser({
-        username: userData.username,
-        password: userData.password, // In production, hash this!
-        role: userData.role
-      });
+  const handleLogin = async (userData, isLogin = false) => {
+    try {
+      let user;
       
-      if (!dbUser.error) {
-        userData.id = dbUser.id;
+      if (isLogin) {
+        // Login existing user
+        user = await loginUser(userData.email, userData.password);
+      } else {
+        // Create new user
+        user = await createUser(userData);
       }
+      
+      setUser(user);
+      localStorage.setItem('busconnect_user', JSON.stringify(user));
+      
+      // Update all users list
+      const updatedUsers = await getUsers();
+      setAllUsers(updatedUsers);
+      
+      setCurrentView('dashboard');
+    } catch (error) {
+      alert(error.message || 'Authentication failed');
+      console.error('Login error:', error);
     }
-    
-    setUser(userData);
-    localStorage.setItem('busconnect_user', JSON.stringify(userData));
-    
-    // Add to allUsers or update existing
-    const userExists = allUsers.find(u => u.id === userData.id);
-    let updatedUsers;
-    
-    if (userExists) {
-      updatedUsers = allUsers.map(u => 
-        u.id === userData.id ? { ...u, online: true } : u
-      );
-    } else {
-      updatedUsers = [...allUsers, { ...userData, online: true }];
-    }
-    
-    setAllUsers(updatedUsers);
-    localStorage.setItem('busconnect_all_users', JSON.stringify(updatedUsers));
-    setCurrentView('dashboard');
   };
 
   const handleImageUpload = (event) => {
@@ -190,29 +187,28 @@ function App() {
       description: 'Product from ' + user.username
     };
 
-    let productId = Date.now();
-
-    if (dbConnected) {
-      const dbProduct = await createProduct(productData);
-      if (!dbProduct.error) {
-        productId = dbProduct.id;
+    try {
+      if (dbConnected) {
+        const dbProduct = await createProduct(productData);
         productData.id = dbProduct.id;
         productData.created_at = dbProduct.created_at;
+      } else {
+        productData.id = Date.now();
       }
-    } else {
-      productData.id = productId;
-    }
 
-    const updatedVendorProducts = [...vendorProducts, productData];
-    const updatedProducts = [...products, productData];
-    
-    setVendorProducts(updatedVendorProducts);
-    setProducts(updatedProducts);
-    setNewProduct({ name: '', price: '', image: null });
-    
-    // Save to localStorage as fallback
-    localStorage.setItem('busconnect_products', JSON.stringify(updatedProducts));
-    alert('Product added successfully!');
+      const updatedVendorProducts = [...vendorProducts, productData];
+      const updatedProducts = [...products, productData];
+      
+      setVendorProducts(updatedVendorProducts);
+      setProducts(updatedProducts);
+      setNewProduct({ name: '', price: '', image: null });
+      
+      // Save to localStorage as fallback
+      localStorage.setItem('busconnect_products', JSON.stringify(updatedProducts));
+      alert('Product added successfully!');
+    } catch (error) {
+      alert('Error adding product: ' + error.message);
+    }
   };
 
   const handleBuyProduct = (product) => {
@@ -333,68 +329,159 @@ function App() {
       location: checkInLocation,
     };
 
-    let checkInId = Date.now();
-
-    if (dbConnected) {
-      const dbCheckin = await createCheckin(checkInData);
-      if (!dbCheckin.error) {
-        checkInId = dbCheckin.id;
+    try {
+      if (dbConnected) {
+        const dbCheckin = await createCheckin(checkInData);
         checkInData.id = dbCheckin.id;
         checkInData.timestamp = dbCheckin.timestamp;
+      } else {
+        checkInData.id = Date.now();
+        checkInData.timestamp = new Date().toLocaleString();
       }
-    } else {
-      checkInData.id = checkInId;
-      checkInData.timestamp = new Date().toLocaleString();
+
+      const updatedCheckIns = [...checkedInPassengers.filter(c => c.passenger_id !== user.id), checkInData];
+      setCheckedInPassengers(updatedCheckIns);
+      localStorage.setItem('busconnect_checkins', JSON.stringify(updatedCheckIns));
+
+      alert(`Check-in successful!\nLocation: ${checkInLocation}\nTime: ${new Date().toLocaleString()}`);
+      setCheckInLocation('');
+    } catch (error) {
+      alert('Error during check-in: ' + error.message);
     }
+  };
 
-    const updatedCheckIns = [...checkedInPassengers.filter(c => c.passenger_id !== user.id), checkInData];
-    setCheckedInPassengers(updatedCheckIns);
-    localStorage.setItem('busconnect_checkins', JSON.stringify(updatedCheckIns));
+  // Welcome Screen Component
+  const WelcomeScreen = () => {
+    return (
+      <div className="welcome-container">
+        <div className="welcome-header">
+          <div className="logo-container">
+            <img src="/logo.png" alt="BusConnect Logo" className="app-logo" />
+          </div>
+          <h1>Welcome to BusConnect</h1>
+          <p className="welcome-subtitle">Your connected marketplace on the go</p>
+        </div>
 
-    alert(`Check-in successful!\nLocation: ${checkInLocation}\nTime: ${new Date().toLocaleString()}`);
-    setCheckInLocation('');
+        <div className="welcome-content">
+          <div className="welcome-features">
+            <div className="feature-item">
+              <span className="feature-icon">🛒</span>
+              <h3>Shop Products</h3>
+              <p>Browse and buy from vendors while traveling</p>
+            </div>
+            <div className="feature-item">
+              <span className="feature-icon">💬</span>
+              <h3>Real-time Chat</h3>
+              <p>Connect with drivers, vendors, and passengers</p>
+            </div>
+            <div className="feature-item">
+              <span className="feature-icon">📍</span>
+              <h3>Location Check-in</h3>
+              <p>Let drivers know your location</p>
+            </div>
+          </div>
+
+          <button 
+            type="button"
+            onClick={() => setCurrentView('auth')}
+            className="get-started-btn"
+          >
+            Get Started
+          </button>
+        </div>
+      </div>
+    );
   };
 
   // Auth Screen Component
   const AuthScreen = () => {
     const [isLogin, setIsLogin] = useState(true);
-    const [username, setUsername] = useState('');
+    const [fullName, setFullName] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [role, setRole] = useState('');
 
-    const handleAuth = (e) => {
+    const handleAuth = async (e) => {
       e.preventDefault();
-      if (!username || !password || !role) {
-        alert('Please fill all fields');
-        return;
-      }
-
-      const userData = { 
-        username, 
-        role, 
-        id: Date.now(),
-      };
       
-      handleLogin(userData);
+      try {
+        if (isLogin) {
+          // Login logic
+          if (!email || !password) {
+            alert('Please fill all fields');
+            return;
+          }
+          
+          await handleLogin({ email, password }, true);
+        } else {
+          // Signup logic
+          if (!fullName || !email || !password || !confirmPassword || !role) {
+            alert('Please fill all fields');
+            return;
+          }
+          
+          if (password !== confirmPassword) {
+            alert('Passwords do not match');
+            return;
+          }
+          
+          if (password.length < 6) {
+            alert('Password must be at least 6 characters long');
+            return;
+          }
+
+          const userData = { 
+            username: fullName,
+            email,
+            password,
+            role, 
+          };
+          
+          await handleLogin(userData, false);
+        }
+      } catch (error) {
+        alert(error.message || 'Authentication failed');
+      }
     };
 
     return (
       <div className="auth-container">
         <div className="auth-header">
+          <button 
+            type="button"
+            onClick={() => setCurrentView('welcome')}
+            className="back-to-welcome-btn"
+          >
+            ← Back
+          </button>
           <h1>BusConnect</h1>
-          <p className="subtitle">Connected to public Wi-Fi</p>
+          <p className="subtitle">{isLogin ? 'Login to your account' : 'Create your account'}</p>
         </div>
 
         <div className="auth-card">
           <h2>{isLogin ? 'Login' : 'Sign Up'}</h2>
           
           <form onSubmit={handleAuth} className="auth-form">
+            {!isLogin && (
+              <div className="input-group">
+                <input
+                  type="text"
+                  placeholder="Full Name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="input-field"
+                  required={!isLogin}
+                />
+              </div>
+            )}
+            
             <div className="input-group">
               <input
-                type="text"
-                placeholder="Username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                type="email"
+                placeholder="Email Address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="input-field"
                 required
               />
@@ -411,21 +498,36 @@ function App() {
               />
             </div>
 
-            <div className="role-selection">
-              <label>Select Role:</label>
-              <div className="role-buttons">
-                {['driver', 'vendor', 'passenger'].map((r) => (
-                  <button
-                    key={r}
-                    type="button"
-                    className={`role-btn ${role === r ? 'active' : ''}`}
-                    onClick={() => setRole(r)}
-                  >
-                    {r.charAt(0).toUpperCase() + r.slice(1)}
-                  </button>
-                ))}
-              </div>
-            </div>
+            {!isLogin && (
+              <>
+                <div className="input-group">
+                  <input
+                    type="password"
+                    placeholder="Confirm Password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="input-field"
+                    required={!isLogin}
+                  />
+                </div>
+
+                <div className="role-selection">
+                  <label>Select Role:</label>
+                  <div className="role-buttons">
+                    {['driver', 'vendor', 'passenger'].map((r) => (
+                      <button
+                        key={r}
+                        type="button"
+                        className={`role-btn ${role === r ? 'active' : ''}`}
+                        onClick={() => setRole(r)}
+                      >
+                        {r.charAt(0).toUpperCase() + r.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
 
             <button type="submit" className="auth-submit-btn">
               {isLogin ? 'Login' : 'Sign Up'}
@@ -984,12 +1086,10 @@ function App() {
   // Main Render Logic
   return (
     <div className="App">
-      {!dbConnected && (
-        <div className="db-warning">
-          ⚠️ Running in offline mode. Some features may not persist.
-        </div>
-      )}
-      {currentView === 'auth' || !user ? (
+      {/* REMOVED OFFLINE WARNING - No more dbConnected check */}
+      {currentView === 'welcome' ? (
+        <WelcomeScreen />
+      ) : currentView === 'auth' || !user ? (
         <AuthScreen />
       ) : currentView === 'products' ? (
         <ProductsScreen />
@@ -1012,7 +1112,7 @@ function App() {
             case 'vendor':
               return <VendorDashboard />;
             default:
-              return <AuthScreen />;
+              return <WelcomeScreen />;
           }
         })()
       )}

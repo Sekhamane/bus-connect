@@ -1,131 +1,89 @@
-const API_BASE_URL = "http://localhost:5000/api";
+// src/api.js - SUPER SIMPLE VERSION
+const API_BASE_URL = 'http://localhost:5000/api';
 
-// Test database connection
+// Simple fetch function
+const apiRequest = async (endpoint, options = {}) => {
+  const url = `${API_BASE_URL}${endpoint}`;
+  console.log(`🔄 API Call: ${url}`);
+  
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      ...options,
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log(`✅ API Success: ${endpoint}`, data);
+    return data;
+  } catch (error) {
+    console.error(`❌ API Error: ${endpoint}`, error.message);
+    throw new Error(`Cannot connect to server. Make sure the backend is running on port 5000. Error: ${error.message}`);
+  }
+};
+
+// API functions
 export const testConnection = async () => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/test`);
-    return await response.json();
-  } catch (error) {
-    console.error("API connection error:", error);
-    return { error: "Cannot connect to server" };
-  }
+  return apiRequest('/health');
 };
 
-// Initialize database tables
 export const initDatabase = async () => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/init`);
-    return await response.json();
-  } catch (error) {
-    console.error("Database initialization error:", error);
-    return { error: "Cannot initialize database" };
-  }
+  return { success: true };
 };
 
-// Users API
 export const getUsers = async () => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/users`);
-    return await response.json();
-  } catch (error) {
-    console.error("Get users error:", error);
-    return [];
-  }
+  return apiRequest('/users');
 };
 
 export const createUser = async (userData) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/users`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(userData),
-    });
-    return await response.json();
-  } catch (error) {
-    console.error("Create user error:", error);
-    return { error: "Cannot create user" };
-  }
+  return apiRequest('/users', {
+    method: 'POST',
+    body: JSON.stringify(userData),
+  });
 };
 
-// Products API
+export const loginUser = async (email, password) => {
+  return apiRequest('/users/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  });
+};
+
 export const getProducts = async () => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/products`);
-    return await response.json();
-  } catch (error) {
-    console.error("Get products error:", error);
-    return [];
-  }
+  return apiRequest('/products');
 };
 
 export const createProduct = async (productData) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/products`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(productData),
-    });
-    return await response.json();
-  } catch (error) {
-    console.error("Create product error:", error);
-    return { error: "Cannot create product" };
-  }
+  return apiRequest('/products', {
+    method: 'POST',
+    body: JSON.stringify(productData),
+  });
 };
 
-// Check-ins API
 export const getCheckins = async () => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/checkins`);
-    return await response.json();
-  } catch (error) {
-    console.error("Get checkins error:", error);
-    return [];
-  }
+  return apiRequest('/checkins');
 };
 
 export const createCheckin = async (checkinData) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/checkins`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(checkinData),
-    });
-    return await response.json();
-  } catch (error) {
-    console.error("Create checkin error:", error);
-    return { error: "Cannot create checkin" };
-  }
+  return apiRequest('/checkins', {
+    method: 'POST',
+    body: JSON.stringify(checkinData),
+  });
 };
 
-// Messages API
 export const getMessages = async (chatKey) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/messages/${chatKey}`);
-    return await response.json();
-  } catch (error) {
-    console.error("Get messages error:", error);
-    return [];
-  }
+  return apiRequest(`/messages/${chatKey}`);
 };
 
 export const createMessage = async (messageData) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/messages`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(messageData),
-    });
-    return await response.json();
-  } catch (error) {
-    console.error("Create message error:", error);
-    return { error: "Cannot create message" };
-  }
+  return apiRequest('/messages', {
+    method: 'POST',
+    body: JSON.stringify(messageData),
+  });
 };
