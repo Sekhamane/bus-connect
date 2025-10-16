@@ -1,5 +1,5 @@
 // src/api.js - WORKING VERSION
-const API_BASE_URL = 'https://busconnect-ftzz.onrender.com';
+const API_BASE_URL = 'https://connect-bus.onrender.com';
 
 // Simple fetch function
 const apiRequest = async (endpoint, options = {}) => {
