@@ -1,4 +1,3 @@
-// backend/server.js
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -12,6 +11,17 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// ✅ ADDED: JWT_SECRET validation for production
+if (!process.env.JWT_SECRET) {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('❌ JWT_SECRET is required in production!');
+    process.exit(1);
+  } else {
+    process.env.JWT_SECRET = 'development-fallback-secret-change-in-production';
+    console.warn('⚠️  Using development JWT secret');
+  }
+}
 
 // Enhanced CORS configuration
 app.use(cors({
@@ -43,6 +53,7 @@ app.get('/', (req, res) => {
     message: 'BusConnect Backend Server is running!',
     timestamp: new Date().toISOString(),
     database: 'PostgreSQL with Neon.tech',
+    environment: process.env.NODE_ENV || 'development',
     endpoints: ['/api/health', '/api/test', '/api/users', '/api/products']
   });
 });
@@ -55,11 +66,21 @@ app.get('/api/health', async (req, res) => {
       status: 'OK', 
       message: 'Backend is running perfectly!',
       database: dbConnected ? 'Connected' : 'Disconnected',
+      environment: process.env.NODE_ENV || 'development',
       timestamp: new Date().toISOString()
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
+});
+
+// Test endpoint
+app.get('/api/test', (req, res) => {
+  res.json({ 
+    message: 'API is working!',
+    status: 'success',
+    environment: process.env.NODE_ENV || 'development'
+  });
 });
 
 // Users endpoints with database
@@ -81,10 +102,10 @@ app.post('/api/users', async (req, res) => {
     const user = result.rows[0];
     console.log('📝 User created:', user.username);
     
-    // Generate JWT token
+    // Generate JWT token - ✅ UPDATED: Uses validated JWT_SECRET
     const token = jwt.sign(
       { userId: user.id, username: user.username, role: user.role },
-      process.env.JWT_SECRET || 'fallback-secret',
+      process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
     
@@ -134,14 +155,14 @@ app.post('/api/users/login', async (req, res) => {
     
     // Update user online status
     await pool.query(
-      'UPDATE users SET online = true, updated_at = CURRENT_TIMESTAMP WHERE id = $1',
+      'UPDATE users SET online = true WHERE id = $1',
       [user.id]
     );
     
-    // Generate JWT token
+    // Generate JWT token - ✅ UPDATED: Uses validated JWT_SECRET
     const token = jwt.sign(
       { userId: user.id, username: user.username, role: user.role },
-      process.env.JWT_SECRET || 'fallback-secret',
+      process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
     
@@ -321,6 +342,7 @@ const startServer = async () => {
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🔐 JWT: ${process.env.JWT_SECRET ? 'Configured' : 'Missing'}`);
       console.log(`🗄️  Database: ${dbConnected ? 'Connected to PostgreSQL' : 'Not connected'}`);
       console.log(`🌐 CORS enabled for frontend`);
     });
