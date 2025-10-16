@@ -26,7 +26,7 @@ if (!process.env.JWT_SECRET) {
 // Enhanced CORS configuration
 app.use(cors({
   origin: [
-    'https://busconnect-front-end.onrender.com',
+    'https://busconnect-frontend.onrender.com',
     'http://localhost:3000',
     'http://localhost:3001'
   ],
