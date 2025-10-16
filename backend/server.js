@@ -12,7 +12,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ✅ ADDED: JWT_SECRET validation for production
+// ✅ JWT_SECRET validation
 if (!process.env.JWT_SECRET) {
   if (process.env.NODE_ENV === 'production') {
     console.error('❌ JWT_SECRET is required in production!');
@@ -23,13 +23,9 @@ if (!process.env.JWT_SECRET) {
   }
 }
 
-// Enhanced CORS configuration
+// ✅ PERMISSIVE CORS - FIXES "Failed to fetch"
 app.use(cors({
-  origin: [
-    'https://busconnect-frontend.onrender.com',
-    'http://localhost:3000',
-    'http://localhost:3001'
-  ],
+  origin: '*', // Allow ALL origins
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
@@ -102,7 +98,7 @@ app.post('/api/users', async (req, res) => {
     const user = result.rows[0];
     console.log('📝 User created:', user.username);
     
-    // Generate JWT token - ✅ UPDATED: Uses validated JWT_SECRET
+    // Generate JWT token
     const token = jwt.sign(
       { userId: user.id, username: user.username, role: user.role },
       process.env.JWT_SECRET,
@@ -121,7 +117,7 @@ app.post('/api/users', async (req, res) => {
   } catch (error) {
     console.error('User creation error:', error);
     
-    if (error.code === '23505') { // Unique violation
+    if (error.code === '23505') {
       if (error.constraint === 'users_username_key') {
         res.status(400).json({ error: 'Username already exists' });
       } else if (error.constraint === 'users_email_key') {
@@ -159,7 +155,7 @@ app.post('/api/users/login', async (req, res) => {
       [user.id]
     );
     
-    // Generate JWT token - ✅ UPDATED: Uses validated JWT_SECRET
+    // Generate JWT token
     const token = jwt.sign(
       { userId: user.id, username: user.username, role: user.role },
       process.env.JWT_SECRET,
@@ -344,7 +340,7 @@ const startServer = async () => {
       console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`🔐 JWT: ${process.env.JWT_SECRET ? 'Configured' : 'Missing'}`);
       console.log(`🗄️  Database: ${dbConnected ? 'Connected to PostgreSQL' : 'Not connected'}`);
-      console.log(`🌐 CORS enabled for frontend`);
+      console.log(`🌐 CORS enabled for ALL origins`);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);

@@ -1,4 +1,3 @@
-// backend/database.js
 import pkg from 'pg';
 import dotenv from 'dotenv';
 
@@ -43,8 +42,7 @@ export const initDatabase = async () => {
         password_hash VARCHAR(255) NOT NULL,
         role VARCHAR(20) CHECK (role IN ('driver', 'vendor', 'passenger')) NOT NULL,
         online BOOLEAN DEFAULT false,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
@@ -58,8 +56,7 @@ export const initDatabase = async () => {
         vendor_id INTEGER REFERENCES users(id),
         category VARCHAR(50) DEFAULT 'General',
         description TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
