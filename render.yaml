@@ -1,13 +1,23 @@
 services:
+  # Backend Service
   - type: web
-    name: busconnect
+    name: busconnect-backend
     env: node
-    plan: free
-    buildCommand: |
-      npm install
-      npm run build
-      cd backend && npm install
-    startCommand: cd backend && npm start
+    root: backend
+    buildCommand: npm install
+    startCommand: npm start
     envVars:
+      - key: DATABASE_URL
+        value: postgresql://neondb_owner:npg_yoB2PjQp1vOW@ep-muddy-dust-a1paj6v8-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+      - key: JWT_SECRET
+        value: busconnect-super-secret-key-2024-make-this-long-and-random
       - key: NODE_ENV
         value: production
+
+  # Frontend Service
+  - type: web
+    name: busconnect-frontend
+    env: static
+    root: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: build
